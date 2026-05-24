@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Projet existant — règle conservée intacte ─────────────────────────────
+    match /budgets/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ── Zikafon — collections préfixées zikafon_ ──────────────────────────────
+    match /zikafon_users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+      match /zikafon_likedTracks/{trackId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      match /zikafon_moodSessions/{sessionId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+    }
+
+  }
+}
