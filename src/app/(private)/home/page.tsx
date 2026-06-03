@@ -6,6 +6,7 @@ import { MoodInput } from '@/components/MoodInput'
 import { LoadingScreen, LoadingStep } from '@/components/LoadingScreen'
 import { MoodAnalysis, Track } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
+import { checkAndIncrementSearch } from '@/lib/firestore'
 
 const SEARCHED_KEY = 'zikafon_searched_once'
 
@@ -17,6 +18,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null)
   const [retryIn, setRetryIn] = useState<number | null>(null)
   const [showGate, setShowGate] = useState(false)
+  const [limitReached, setLimitReached] = useState(false)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Check if anonymous user already used their free search
@@ -44,6 +46,16 @@ export default function HomePage() {
     setRetryIn(null)
     setMoodKeywords([])
     clearInterval(countdownRef.current!)
+
+    // ── Daily limit check for authenticated free users ────
+    if (user) {
+      try {
+        const { allowed } = await checkAndIncrementSearch(user.uid)
+        if (!allowed) { setLimitReached(true); return }
+      } catch {
+        // If the check fails, allow the search to proceed
+      }
+    }
 
     try {
       // ── Step 1: Gemini analysis ──────────────────────────
@@ -107,6 +119,38 @@ export default function HomePage() {
   }
 
   const isLoading = loadingStep !== 'idle'
+
+  // ── Limit screen: free user hit their 3/day cap ──────────────────────────
+  if (limitReached) {
+    return (
+      <main className="home-main relative flex flex-col items-center justify-center px-4 py-12">
+        <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+          <div className="aurora-blob animate-aurora blob-purple" />
+          <div className="aurora-blob animate-aurora blob-pink" />
+        </div>
+        <div className="gate-card glass-card animate-scale-in">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon.png" alt="" aria-hidden="true" width={72} height={72} className="mascot-brand" />
+          <h1 className="gate-title">
+            <span className="text-gradient">3 vibes, c&apos;est ta limite du jour !</span>
+          </h1>
+          <p className="gate-desc">
+            Passe à <strong>Vibe Pro</strong> pour des recherches illimitées, un historique complet et bien plus.
+          </p>
+          <Link href="/pricing" className="btn-aurora w-full">
+            <span className="btn-aurora-inner">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              Voir les offres
+            </span>
+          </Link>
+          <p className="gate-note">Reviens demain pour 3 nouvelles recherches gratuites.</p>
+        </div>
+      </main>
+    )
+  }
 
   // ── Gate screen: anonymous user trying their 2nd search ───────────────────
   if (showGate) {

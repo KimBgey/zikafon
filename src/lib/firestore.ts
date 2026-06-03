@@ -7,6 +7,7 @@ import {
   getDocs,
   deleteDoc,
   updateDoc,
+  runTransaction,
   serverTimestamp,
   query,
   orderBy,
@@ -14,6 +15,10 @@ import {
   Timestamp,
 } from 'firebase/firestore'
 import { Track, MoodAnalysis } from '@/types'
+import type { PlanId } from './stripe'
+
+const FREE_DAILY_LIMIT = 3
+const today = () => new Date().toISOString().split('T')[0] // YYYY-MM-DD
 
 // ── Collection paths ───────────────────────────────────────────────────────────
 // All Zikafon collections are prefixed with "zikafon_" to avoid conflicts in
@@ -182,4 +187,56 @@ export async function getSessions(
   )
   const snap = await getDocs(q)
   return snap.docs.map((d) => d.data() as MoodSessionDoc)
+}
+
+// ── Plan management ───────────────────────────────────────────────────────────
+
+export interface PlanInfo {
+  plan: PlanId
+  stripeCustomerId: string | null
+  stripeSubscriptionId: string | null
+  dailySearches: { count: number; date: string }
+}
+
+export async function getPlanInfo(uid: string): Promise<PlanInfo> {
+  const snap = await getDoc(doc(db, USERS, uid))
+  const data = snap.data() ?? {}
+  return {
+    plan: (data.plan as PlanId) ?? 'free',
+    stripeCustomerId: data.stripeCustomerId ?? null,
+    stripeSubscriptionId: data.stripeSubscriptionId ?? null,
+    dailySearches: data.dailySearches ?? { count: 0, date: '' },
+  }
+}
+
+/** Atomically checks the daily limit and increments the counter.
+ *  Returns { allowed, remaining } so the UI can show "X restantes". */
+export async function checkAndIncrementSearch(uid: string): Promise<{
+  allowed: boolean
+  remaining: number
+  plan: PlanId
+}> {
+  const ref = doc(db, USERS, uid)
+  const dateStr = today()
+
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref)
+    const data = snap.data() ?? {}
+    const plan: PlanId = (data.plan as PlanId) ?? 'free'
+
+    // Pro / Max — unlimited
+    if (plan !== 'free') {
+      return { allowed: true, remaining: -1, plan }
+    }
+
+    const prev = data.dailySearches ?? { count: 0, date: '' }
+    const count = prev.date === dateStr ? prev.count : 0
+
+    if (count >= FREE_DAILY_LIMIT) {
+      return { allowed: false, remaining: 0, plan }
+    }
+
+    tx.update(ref, { dailySearches: { count: count + 1, date: dateStr } })
+    return { allowed: true, remaining: FREE_DAILY_LIMIT - count - 1, plan }
+  })
 }
