@@ -462,6 +462,7 @@ input:-webkit-autofill:focus {
 .results-progress-fill {
   height: 100%; border-radius: 9999px;
   background: linear-gradient(90deg, #7C3AED, #EC4899);
+  width: var(--w, 0%);
   transition: width 0.4s ease;
 }
 
@@ -2538,3 +2539,79 @@ input:-webkit-autofill:focus {
     margin: 0 auto;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   GATE SCREEN — anonymous user trying their 2nd search
+   ═══════════════════════════════════════════════════════════════ */
+.gate-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 1.75rem;
+  text-align: center;
+}
+
+.gate-title {
+  font-family: 'Righteous', cursive;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.gate-desc {
+  font-size: 0.875rem;
+  color: #94A3B8;
+  line-height: 1.7;
+  max-width: 320px;
+  margin: 0;
+}
+
+.gate-login-link {
+  font-size: 0.82rem;
+  color: #a78bfa;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+  padding: 0.25rem;
+}
+.gate-login-link:hover { color: #c4b5fd; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DONE SCREEN — anonymous user signup banner
+   ═══════════════════════════════════════════════════════════════ */
+.done-anon-banner {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+}
+
+.done-anon-title {
+  font-family: 'Righteous', cursive;
+  font-size: 1.1rem;
+  color: #F8FAFC;
+  margin: 0;
+}
+
+.done-anon-desc {
+  font-size: 0.8rem;
+  color: #94A3B8;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 300px;
+}
+
+.done-anon-login {
+  font-size: 0.78rem;
+  color: #a78bfa;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+.done-anon-login:hover { color: #c4b5fd; }

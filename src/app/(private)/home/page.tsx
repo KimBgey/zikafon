@@ -1,17 +1,30 @@
 'use client'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { MoodInput } from '@/components/MoodInput'
 import { LoadingScreen, LoadingStep } from '@/components/LoadingScreen'
 import { MoodAnalysis, Track } from '@/types'
+import { useAuth } from '@/hooks/useAuth'
+
+const SEARCHED_KEY = 'zikafon_searched_once'
 
 export default function HomePage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [loadingStep, setLoadingStep] = useState<LoadingStep>('idle')
   const [moodKeywords, setMoodKeywords] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [retryIn, setRetryIn] = useState<number | null>(null)
+  const [showGate, setShowGate] = useState(false)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Check if anonymous user already used their free search
+  useEffect(() => {
+    if (!user && typeof window !== 'undefined') {
+      setShowGate(localStorage.getItem(SEARCHED_KEY) === '1')
+    }
+  }, [user])
 
   // Countdown timer for rate-limit
   useEffect(() => {
@@ -72,6 +85,9 @@ export default function HomePage() {
       sessionStorage.setItem('zikafon_mood',   JSON.stringify(mood))
       sessionStorage.setItem('zikafon_tracks', JSON.stringify(tracks))
 
+      // Mark that the user has done their first search (used by the anonymous gate)
+      if (!user) localStorage.setItem(SEARCHED_KEY, '1')
+
       setLoadingStep('done')
       await new Promise(r => setTimeout(r, 400))
       router.push('/results')
@@ -91,6 +107,44 @@ export default function HomePage() {
   }
 
   const isLoading = loadingStep !== 'idle'
+
+  // ── Gate screen: anonymous user trying their 2nd search ───────────────────
+  if (showGate) {
+    return (
+      <main className="home-main relative flex flex-col items-center justify-center px-4 py-12">
+        <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
+          <div className="aurora-blob animate-aurora blob-purple" />
+          <div className="aurora-blob animate-aurora blob-pink" />
+          <div className="aurora-blob animate-float-slow blob-orange" />
+        </div>
+        <div className="gate-card glass-card animate-scale-in">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon.png" alt="" aria-hidden="true" width={72} height={72} className="mascot-brand" />
+          <h1 className="gate-title">
+            <span className="text-gradient">Tu as aimé l&apos;expérience ?</span>
+          </h1>
+          <p className="gate-desc">
+            Crée ton compte gratuit pour refaire une recherche de vibe, sauvegarder tes coups de cœur et accéder à ton historique.
+          </p>
+          <Link href="/register" className="btn-aurora w-full">
+            <span className="btn-aurora-inner">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="19" y1="8" x2="19" y2="14"/>
+                <line x1="22" y1="11" x2="16" y2="11"/>
+              </svg>
+              Créer mon compte — c&apos;est gratuit
+            </span>
+          </Link>
+          <Link href="/login" className="gate-login-link">
+            J&apos;ai déjà un compte →
+          </Link>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <>

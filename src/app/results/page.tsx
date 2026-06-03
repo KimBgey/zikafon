@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { AnimatePresence, motion } from 'framer-motion'
 import { SwipeCard } from '@/components/SwipeCard'
 import { MoodBadge } from '@/components/MoodBadge'
@@ -90,7 +91,7 @@ export default function ResultsPage() {
           className="results-info-btn"
           onClick={() => setShowMood(v => !v)}
           aria-label="Voir l'analyse du mood"
-          aria-expanded={showMood ? 'true' : 'false'}
+          aria-expanded={showMood}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -121,7 +122,7 @@ export default function ResultsPage() {
         <div className="results-progress-bar">
           <div
             className="results-progress-fill"
-            style={{ width: `${progress}%` } as React.CSSProperties}
+            style={{ '--w': `${progress}%` } as React.CSSProperties}
           />
         </div>
         <p className="results-counter">
@@ -269,20 +270,49 @@ function DoneScreen({ liked, skipped, tracks, onRestart, onProfile }: DoneScreen
           </div>
         )}
 
-        <button type="button" className="btn-aurora w-full" onClick={onRestart}>
-          <span className="btn-aurora-inner">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
-            </svg>
-            Nouvelle session
-          </span>
-        </button>
-
-        <button type="button" className="done-profile-btn" onClick={onProfile}>
-          Voir mon profil musical
-        </button>
+        {auth.currentUser ? (
+          /* ── Authenticated: restart + profile ── */
+          <>
+            <button type="button" className="btn-aurora w-full" onClick={onRestart}>
+              <span className="btn-aurora-inner">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                  <path d="M3 3v5h5"/>
+                </svg>
+                Nouvelle session
+              </span>
+            </button>
+            <button type="button" className="done-profile-btn" onClick={onProfile}>
+              Voir mon profil musical
+            </button>
+          </>
+        ) : (
+          /* ── Anonymous: invite to sign up ── */
+          <>
+            <div className="done-anon-banner glass-card">
+              <p className="done-anon-title">Sauvegarde ta vibe 🎶</p>
+              <p className="done-anon-desc">
+                Crée ton compte gratuit pour garder tes coups de cœur, refaire des recherches et voir ton historique.
+              </p>
+              <Link href="/register" className="btn-aurora w-full">
+                <span className="btn-aurora-inner">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <line x1="19" y1="8" x2="19" y2="14"/>
+                    <line x1="22" y1="11" x2="16" y2="11"/>
+                  </svg>
+                  Créer mon compte — c&apos;est gratuit
+                </span>
+              </Link>
+              <Link href="/login" className="done-anon-login">
+                J&apos;ai déjà un compte →
+              </Link>
+            </div>
+          </>
+        )}
       </div>
     </main>
   )

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Routes that require authentication
-const PRIVATE_ROUTES = ['/home', '/results', '/history', '/liked', '/settings']
+// /home and /results are intentionally public — "try before signup" flow
+const PRIVATE_ROUTES = ['/history', '/liked', '/settings']
 
 // Routes only accessible when NOT authenticated
 const AUTH_ROUTES = ['/login', '/register']
